@@ -1332,6 +1332,112 @@ static ssize_t razer_attr_read_mouse_dpi(struct device *dev, struct device_attri
 }
 
 /**
+ * Write device file "dpi_stages"
+ *
+ * Sets the mouse DPI stages to the array of unsigned shorts written to this
+ * file.
+ * The number of DPI stages is hard limited by RAZER_MOUSE_MAX_DPI_STAGES.
+ *
+ * Each DPI stage is described by 4 bytes:
+ *   - 2 bytes (unsigned short) for x-axis DPI
+ *   - 2 bytes (unsigned short) for y-axis DPI
+ *
+ * buf is expected to contain n*4 bytes where n is the number of DPI stages.
+ * If count is not a multiple of 4 then the residual bytes will be ignored.
+ */
+static ssize_t razer_attr_write_mouse_dpi_stages(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct razer_mouse_device *device = dev_get_drvdata(dev);
+    struct razer_report report = {0};
+    unsigned short dpi[2 * RAZER_MOUSE_MAX_DPI_STAGES] = {0};
+    unsigned char stages_count = 0;
+    size_t remaining = count;
+
+    while (stages_count < RAZER_MOUSE_MAX_DPI_STAGES && remaining >= 4) {
+        // DPI X
+        dpi[stages_count * 2]     = (buf[0] << 8) | (buf[1] & 0xFF);
+
+        // DPI Y
+        dpi[stages_count * 2 + 1] = (buf[2] << 8) | (buf[3] & 0xFF);
+
+        stages_count += 1;
+        buf += 4;
+        remaining -= 4;
+    }
+
+    report = razer_chroma_misc_set_dpi_stages(VARSTORE, stages_count, dpi);
+
+    razer_send_payload(device->usb_dev, &report);
+
+    // Always return count, otherwise some programs can enter an infinite loop.
+    // Example:
+    // Program writes 7 bytes to dpi_stages. 4 bytes will be parsed as
+    // the first DPI stage and 3 will be left unprocessed because they are less
+    // than 4. The program will try to write the 3 bytes again but this
+    // function will always return 0, throwing the program into a loop.
+    return count;
+}
+
+/**
+ * Read device file "dpi_stages"
+ *
+ * Writes comma-separated list of "dpi_x:dpi_y" (one for each DPI stage) to
+ * buf.
+ */
+static ssize_t razer_attr_read_mouse_dpi_stages(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    struct razer_mouse_device *device = dev_get_drvdata(dev);
+    struct razer_report report = {0};
+    struct razer_report response = {0};
+    unsigned short dpi_x;
+    unsigned short dpi_y;
+    unsigned char stages_count;
+    ssize_t count;                 // bytes written
+    unsigned int i;                // iterator over stages_count
+    unsigned char *args;           // pointer to the next dpi value in response.arguments
+
+    report = razer_chroma_misc_get_dpi_stages(VARSTORE);
+    response = razer_send_payload(device->usb_dev, &report);
+
+    stages_count = response.arguments[2];
+
+    count = 0;
+    args = response.arguments + 4;
+    for (i = 0; i < stages_count; i++) {
+        // Check that we don't read past response.data_size
+        if (args + 4 > response.arguments + response.data_size) {
+            break;
+        }
+
+        dpi_x = (args[0] << 8) | (args[1] & 0xFF);
+        dpi_y = (args[2] << 8) | (args[3] & 0xFF);
+        args += 7;
+
+        // Limit writes to PAGE_SIZE - 1 to leave space for newline.
+        if (i == 0) {
+            count += scnprintf(buf + count, PAGE_SIZE - 1 - count,
+                               "%u:%u", dpi_x, dpi_y);
+        } else {
+            // Prefix with a comma.
+            count += scnprintf(buf + count, PAGE_SIZE - 1 - count,
+                               ",%u:%u", dpi_x, dpi_y);
+        }
+
+        // Check that buf has space available. Add 2 for the null terminator
+        // and newline.
+        if (count + 2 == PAGE_SIZE) {
+            break;
+        }
+    }
+
+    buf[count] = '\n';
+    buf[count + 1] = '\0';
+    count += 2;
+
+    return count;
+}
+
+/**
  * Read device file "device_idle_time"
  *
  * Gets the time this device will go into powersave as a number of seconds.
@@ -3135,6 +3241,7 @@ static DEVICE_ATTR(firmware_version,          0440, razer_attr_read_get_firmware
 static DEVICE_ATTR(test,                      0220, NULL,                                  razer_attr_write_test);
 static DEVICE_ATTR(poll_rate,                 0660, razer_attr_read_poll_rate,             razer_attr_write_poll_rate);
 static DEVICE_ATTR(dpi,                       0660, razer_attr_read_mouse_dpi,             razer_attr_write_mouse_dpi);
+static DEVICE_ATTR(dpi_stages,                0660, razer_attr_read_mouse_dpi_stages,      razer_attr_write_mouse_dpi_stages);
 
 static DEVICE_ATTR(device_type,               0440, razer_attr_read_device_type,           NULL);
 static DEVICE_ATTR(device_mode,               0660, razer_attr_read_device_mode,           razer_attr_write_device_mode);
