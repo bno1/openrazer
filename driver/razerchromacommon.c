@@ -1149,22 +1149,21 @@ struct razer_report razer_chroma_misc_set_dpi_stages(unsigned char variable_stor
     offset = 3;
     for (i = 0; i < count; i++) {
         // Stage number
-        report.arguments[offset] = i;
+        report.arguments[offset++] = i;
 
         // DPI X
-        report.arguments[offset + 1] = (dpi[0] >> 8) & 0x00FF;
-        report.arguments[offset + 2] = dpi[0] & 0x00FF;
+        report.arguments[offset++] = (dpi[0] >> 8) & 0x00FF;
+        report.arguments[offset++] = dpi[0] & 0x00FF;
 
         // DPI Y
-        report.arguments[offset + 3] = (dpi[1] >> 8) & 0x00FF;
-        report.arguments[offset + 4] = dpi[1] & 0x00FF;
+        report.arguments[offset++] = (dpi[1] >> 8) & 0x00FF;
+        report.arguments[offset++] = dpi[1] & 0x00FF;
 
         // Reserved
-        report.arguments[offset + 5] = 0;
-        report.arguments[offset + 6] = 0;
+        report.arguments[offset++] = 0;
+        report.arguments[offset++] = 0;
 
         dpi += 2;
-        offset += 7;
     }
 
     return report;
