@@ -204,6 +204,48 @@ def get_dpi_xy(self):
     return dpi
 
 
+@endpoint('razer.device.dpi', 'setDPIStages', in_sig='aq')
+def set_dpi_stages(self, dpi_stages):
+    """
+    Set the DPI on the mouse, Takes in pairs of 2 bytes big-endian
+
+    :param dpi_stages: pairs of dpi X and dpi Y for each stage
+    :type dpi_stages: list of int
+    """
+    self.logger.debug("DBus call set_dpi_stages")
+
+    driver_path = self.get_driver_path('dpi_stages')
+
+    dpi_bytes = b''
+    for dpi in dpi_stages:
+        dpi_bytes += struct.pack('>H', dpi)
+
+    with open(driver_path, 'wb') as driver_file:
+        driver_file.write(dpi_bytes)
+
+
+@endpoint('razer.device.dpi', 'getDPIStages', out_sig='aq')
+def get_dpi_stages(self):
+    """
+    get the DPI stages on the mouse
+
+    :return: List of X, Y DPI
+    :rtype: list of int
+    """
+    self.logger.debug("DBus call get_dpi_stages")
+
+    driver_path = self.get_driver_path('dpi_stages')
+
+    dpi_stages = []
+    with open(driver_path, 'r') as driver_file:
+        result = driver_file.read()
+
+        for stage in result.strip().split(','):
+            dpi_stages.extend([int(dpi) for dpi in stage.split(':')])
+
+    return dpi_stages
+
+
 @endpoint('razer.device.dpi', 'maxDPI', out_sig='i')
 def max_dpi(self):
     self.logger.debug("DBus call max_dpi")
