@@ -98,6 +98,75 @@ class RazerMouse(__RazerDevice):
             raise NotImplementedError()
 
     @property
+    def dpi_stages(self) -> list:
+        """
+        Get mouse DPI stages
+
+        Will return a list of tuples
+        :return: DPI stages [(500, 500), (1000, 1000), (2000, 2000) ...]
+        :rtype: list
+
+        :raises NotImplementedError: if function is not supported
+        """
+        if self.has('dpi'):
+            raw_dpi_stages = self._dbus_interfaces['dpi'].getDPIStages()
+            dpi_stages = []
+
+            i = 0
+            while i + 1 < len(raw_dpi_stages):
+                dpi_x, dpi_y = raw_dpi_stages[i:i+2]
+                i += 2
+
+                dpi_stages.append((int(dpi_x), int(dpi_y)))
+
+            return dpi_stages
+
+    @dpi_stages.setter
+    def dpi_stages(self, value: list):
+        """
+        Set mouse DPI stages
+
+        Daemon does type validation but can't be too careful
+        :param value: list of DPI X, Y tuple
+        :type value: list
+
+        :raises ValueError: If a tuple isn't long enough or contains invalid
+                            crap
+        :raises NotImplementedError: If function is not supported
+        """
+        if self.has('dpi'):
+            dpi_stages = []
+
+            for stage in value:
+                if len(stage) != 2:
+                    raise ValueError(
+                        "DPI tuple is not of length 2. Length: {0}".format(
+                            len(stage)))
+
+                dpi_x, dpi_y = stage
+
+                if not isinstance(dpi_x, int) or not isinstance(dpi_y, int):
+                    raise ValueError(
+                        "DPI X or Y is not an integer, X:{0} Y:{1}".format(
+                            type(dpi_x), type(dpi_y)))
+
+                if dpi_x < 0 or dpi_x > 16000:  # TODO add in max dpi option
+                    raise ValueError(
+                        "DPI X either too small or too large, X:{0}".format(
+                            dpi_x))
+                if dpi_y < 0 or dpi_y > 16000:  # TODO add in max dpi option
+                    raise ValueError(
+                        "DPI Y either too small or too large, Y:{0}".format(
+                            dpi_y))
+
+                dpi_stages.append(dpi_x)
+                dpi_stages.append(dpi_y)
+
+            self._dbus_interfaces['dpi'].setDPIStages(dpi_stages)
+        else:
+            raise NotImplementedError()
+
+    @property
     def poll_rate(self) -> int:
         """
         Get poll rate from device
