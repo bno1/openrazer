@@ -1432,7 +1432,10 @@ static ssize_t razer_attr_read_mouse_dpi_stages(struct device *dev, struct devic
 
     buf[count] = '\n';
     buf[count + 1] = '\0';
-    count += 2;
+
+    // Count the newline but not the null terminator to emulate the sprintf
+    // behavior
+    count += 1;
 
     return count;
 }
