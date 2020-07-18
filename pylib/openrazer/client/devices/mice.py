@@ -83,14 +83,15 @@ class RazerMouse(__RazerDevice):
         if self.has('dpi'):
             if len(value) != 2:
                 raise ValueError("DPI tuple is not of length 2. Length: {0}".format(len(value)))
+            max_dpi = self.max_dpi
             dpi_x, dpi_y = value
 
             if not isinstance(dpi_x, int) or not isinstance(dpi_y, int):
                 raise ValueError("DPI X or Y is not an integer, X:{0} Y:{1}".format(type(dpi_x), type(dpi_y)))
 
-            if dpi_x < 0 or dpi_x > 16000:  # TODO add in max dpi option
+            if dpi_x < 0 or dpi_x > max_dpi:
                 raise ValueError("DPI X either too small or too large, X:{0}".format(dpi_x))
-            if dpi_y < 0 or dpi_y > 16000:  # TODO add in max dpi option
+            if dpi_y < 0 or dpi_y > max_dpi:
                 raise ValueError("DPI Y either too small or too large, Y:{0}".format(dpi_y))
 
             self._dbus_interfaces['dpi'].setDPI(dpi_x, dpi_y)
@@ -133,6 +134,7 @@ class RazerMouse(__RazerDevice):
         :raises NotImplementedError: If function is not supported
         """
         if self.has('dpi'):
+            max_dpi = self.max_dpi
             dpi_stages = []
 
             for stage in value:
@@ -148,11 +150,11 @@ class RazerMouse(__RazerDevice):
                         "DPI X or Y is not an integer, X:{0} Y:{1}".format(
                             type(dpi_x), type(dpi_y)))
 
-                if dpi_x < 0 or dpi_x > 16000:  # TODO add in max dpi option
+                if dpi_x < 0 or dpi_x > max_dpi:
                     raise ValueError(
                         "DPI X either too small or too large, X:{0}".format(
                             dpi_x))
-                if dpi_y < 0 or dpi_y > 16000:  # TODO add in max dpi option
+                if dpi_y < 0 or dpi_y > max_dpi:
                     raise ValueError(
                         "DPI Y either too small or too large, Y:{0}".format(
                             dpi_y))
