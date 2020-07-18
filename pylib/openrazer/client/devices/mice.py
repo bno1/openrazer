@@ -14,6 +14,7 @@ class RazerMouse(__RazerDevice):
         # Capabilities
         self._capabilities['poll_rate'] = self._has_feature('razer.device.misc', ('getPollRate', 'setPollRate'))
         self._capabilities['dpi'] = self._has_feature('razer.device.dpi', ('getDPI', 'setDPI'))
+        self._capabilities['dpi_stages'] = self._has_feature('razer.device.dpi', ('getDPIStages', 'setDPIStages'))
         self._capabilities['available_dpi'] = self._has_feature('razer.device.dpi', 'availableDPI')
         self._capabilities['battery'] = self._has_feature('razer.device.power', 'getBattery')
 
@@ -109,7 +110,7 @@ class RazerMouse(__RazerDevice):
 
         :raises NotImplementedError: if function is not supported
         """
-        if self.has('dpi'):
+        if self.has('dpi_stages'):
             raw_dpi_stages = self._dbus_interfaces['dpi'].getDPIStages()
             dpi_stages = []
 
@@ -133,7 +134,7 @@ class RazerMouse(__RazerDevice):
                             crap
         :raises NotImplementedError: If function is not supported
         """
-        if self.has('dpi'):
+        if self.has('dpi_stages'):
             max_dpi = self.max_dpi
             dpi_stages = []
 
