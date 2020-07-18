@@ -1344,6 +1344,13 @@ static ssize_t razer_attr_read_mouse_dpi(struct device *dev, struct device_attri
  *
  * buf is expected to contain n*4 bytes where n is the number of DPI stages.
  * If count is not a multiple of 4 then the residual bytes will be ignored.
+ *
+ * Example: let's say you want to set the following DPI stages:
+ *  (800, 800), (1800, 1800), (3600, 3200)  // (DPI X, DPI Y)
+ *
+ * You have to write to this file 6 unsigned shorts (big endian) = 12 bytes:
+ *   DPIs:         800 | 800 | 1800 | 1800 | 3600 | 3200
+ *   Bytes (hex): 03 20 03 02 07 08  07 08  0e 10  0c 80
  */
 static ssize_t razer_attr_write_mouse_dpi_stages(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
