@@ -112,14 +112,12 @@ class RazerMouse(__RazerDevice):
             raw_dpi_stages = self._dbus_interfaces['dpi'].getDPIStages()
             dpi_stages = []
 
-            i = 0
-            while i + 1 < len(raw_dpi_stages):
-                dpi_x, dpi_y = raw_dpi_stages[i:i+2]
-                i += 2
-
+            for dpi_x, dpi_y in raw_dpi_stages:
                 dpi_stages.append((int(dpi_x), int(dpi_y)))
 
             return dpi_stages
+        else:
+            raise NotImplementedError()
 
     @dpi_stages.setter
     def dpi_stages(self, value: list):
@@ -159,8 +157,7 @@ class RazerMouse(__RazerDevice):
                         "DPI Y either too small or too large, Y:{0}".format(
                             dpi_y))
 
-                dpi_stages.append(dpi_x)
-                dpi_stages.append(dpi_y)
+                dpi_stages.append((dpi_x, dpi_y))
 
             self._dbus_interfaces['dpi'].setDPIStages(dpi_stages)
         else:
