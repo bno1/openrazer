@@ -1396,8 +1396,6 @@ static ssize_t razer_attr_read_mouse_dpi_stages(struct device *dev, struct devic
     struct razer_mouse_device *device = dev_get_drvdata(dev);
     struct razer_report report = {0};
     struct razer_report response = {0};
-    unsigned short dpi_x;
-    unsigned short dpi_y;
     unsigned char stages_count;
     ssize_t count;                 // bytes written
     unsigned int i;                // iterator over stages_count
@@ -1405,6 +1403,23 @@ static ssize_t razer_attr_read_mouse_dpi_stages(struct device *dev, struct devic
 
     report = razer_chroma_misc_get_dpi_stages(VARSTORE);
     response = razer_send_payload(device->usb_dev, &report);
+
+    // Response format (hex):
+    // 01 02 not sure
+    // 04    number of stages = 4
+    //
+    // 01    first DPI stage
+    // 03 20 first stage DPI X = 800
+    // 03 20 first stage DPI Y = 800
+    // 00 00 reserved
+    //
+    // 02    second DPI stage
+    // 07 08 second stage DPI X = 1800
+    // 07 08 second stage DPI Y = 1800
+    // 00 00 reserved
+    //
+    // 03    third DPI stage
+    // ...
 
     stages_count = response.arguments[2];
 
@@ -1416,33 +1431,10 @@ static ssize_t razer_attr_read_mouse_dpi_stages(struct device *dev, struct devic
             break;
         }
 
-        dpi_x = (args[0] << 8) | (args[1] & 0xFF);
-        dpi_y = (args[2] << 8) | (args[3] & 0xFF);
+        memcpy(buf + count, args, 4);
+        count += 4;
         args += 7;
-
-        // Limit writes to PAGE_SIZE - 1 to leave space for newline.
-        if (i == 0) {
-            count += scnprintf(buf + count, PAGE_SIZE - 1 - count,
-                               "%u:%u", dpi_x, dpi_y);
-        } else {
-            // Prefix with a comma.
-            count += scnprintf(buf + count, PAGE_SIZE - 1 - count,
-                               ",%u:%u", dpi_x, dpi_y);
-        }
-
-        // Check that buf has space available. Add 2 for the null terminator
-        // and newline.
-        if (count + 2 == PAGE_SIZE) {
-            break;
-        }
     }
-
-    buf[count] = '\n';
-    buf[count + 1] = '\0';
-
-    // Count the newline but not the null terminator to emulate the sprintf
-    // behavior
-    count += 1;
 
     return count;
 }

@@ -237,14 +237,13 @@ def get_dpi_stages(self):
     driver_path = self.get_driver_path('dpi_stages')
 
     dpi_stages = []
-    with open(driver_path, 'r') as driver_file:
+    with open(driver_path, 'rb') as driver_file:
         result = driver_file.read()
 
-        for stage in result.strip().split(','):
-            parts = stage.split(':')
-
-            if len(parts) >= 2:
-                dpi_stages.append((int(parts[0]), int(parts[1])))
+        while len(result) >= 4:
+            (dpi_x, dpi_y) = struct.unpack('>HH', result[:4])
+            dpi_stages.append((dpi_x, dpi_y))
+            result = result[4:]
 
     return dpi_stages
 
