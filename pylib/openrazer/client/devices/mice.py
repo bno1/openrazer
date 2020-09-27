@@ -130,8 +130,7 @@ class RazerMouse(__RazerDevice):
         :param value: list of DPI X, Y tuple
         :type value: list
 
-        :raises ValueError: If a tuple isn't long enough or contains invalid
-                            crap
+        :raises ValueError: when the input is invalid
         :raises NotImplementedError: If function is not supported
         """
         if self.has('dpi_stages'):
